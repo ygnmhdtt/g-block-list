@@ -1,6 +1,7 @@
 var displayBlockList = function() {
   storage.get(blockList, function(blockList){
-    document.getElementById("blockList").innerText = blockList.domains.join("\n");
+    var domains = blockList.domains.sort()
+    document.getElementById("blockList").innerText = domains.join("\n");
   });
 };
 
