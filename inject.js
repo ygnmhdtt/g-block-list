@@ -1,51 +1,98 @@
+var storage = chrome.storage.local
+
 var blockLists = {
   domains: []
 };
 
-var entity = {};
-entity.hoge = {
-  col1: 'new data'
-};
-
-var hideDiv = function(event) {
-  this.results[this.id].style.display = "none";
-  console.log(this.results[this.id]);
-  var domain = this.results[this.id].querySelector("a").href;
-  var bls = JSON.parse(localStorage['blockLists']);
-  bls.domains.push('' + domain)
-  localStorage['blockLists'] = JSON.stringify(bls);
-  console.log(localStorage['blockLists']);
+// --------------------------------------------
+// Utilities
+// --------------------------------------------
+var urlToDomain = function(url) {
+  var parser = new URL(url);
+  return parser.host
 }
 
-var hide = function() {
-  var results = document.getElementsByClassName("g pb");
-  for (var i = 0; i < results.length; i++) {
-    var aTag = document.createElement("a");
-    aTag.textContent = "block this domain";
-    aTag.style.color = "orange";
-    aTag.addEventListener("click", {id: i, results: results, handleEvent: hideDiv}, false);
-    results[i].appendChild(aTag);
-  }
-  chrome.storage.local.get(entity, function(items){
-    console.log(items.hoge.col1)
+var getDomain = function(result) {
+  var url = result.querySelector("a").href;
+  return urlToDomain(url);
+}
+
+var createATag = function() {
+  var aTag = document.createElement("a");
+  aTag.textContent = "block this domain";
+  aTag.style.cssText = "font-size: 12pt; color: #3BACED";
+  return aTag;
+}
+
+var block = function(domain) {
+  storage.get(blockLists, function(blockLists){
+    blockLists.domains.push(domain);
+    storage.set(blockLists, function(){});
+    console.log(`block: ${domain}`)
+    console.log(`BlockList: ${blockLists.domains}`);
   });
 }
 
-
-// chrome.storage.local.set(entity, function() {
-//   console.log('stored');
-// });
-
-localStorage['blockLists'] = JSON.stringify(blockLists);
-if (localStorage['blockLists'] == "") {
-  localStorage['blockLists'] = JSON.stringify(blockLists);
+var hide = function(result) {
+  result.style.display = "none";
 }
-setTimeout(hide, 1000);
 
-chrome.storage.local.set({key: value}, function() {
-  console.log('Value is set to ' + value);
+
+// --------------------------------------------
+// Events
+// --------------------------------------------
+var blockEvent = function(event) {
+  var res = this.results;
+  var blockDomain = getDomain(res[this.id]);
+  block(blockDomain);
+}
+
+var hideEvent = function(event) {
+  var res = this.results;
+  var blockDomain = getDomain(res[this.id]);
+  console.log(`hide: ${blockDomain}`);
+  for (var i = 0; i < res.length; i++) {
+    if (getDomain(res[i]) == blockDomain) {
+      hide(res[i]);
+    }
+  }
+}
+
+// --------------------------------------------
+// Runner
+// --------------------------------------------
+var run = function() {
+  var results = document.getElementsByClassName("g pb");
+
+  // First, hide blocked domains
+  storage.get(blockLists, (blockLists) => {
+    for (var i = 0; i < results.length; i++) {
+      var domain = getDomain(results[i]);
+      if (blockLists.domains.includes(domain)) {
+        hide(results[i]);
+      }
+    }
+  });
+
+  // Next, append `block this domain` label
+  for (var i = 0; i < results.length; i++) {
+    var aTag = createATag();
+    aTag.addEventListener("click", {id: i, results: results, handleEvent: hideEvent}, false);
+    aTag.addEventListener("click", {id: i, results: results, handleEvent: blockEvent}, false);
+    results[i].appendChild(aTag);
+  }
+
+}
+
+// Initialize blockLists if empty
+storage.get(blockLists, (blockLists) => {
+  if (blockLists.domains.length == 0) {
+    blockLists.domains = [];
+    storage.set(blockLists, function() {
+      console.log('storage initialized');
+    });
+  }
+  console.log(`BlockList: ${blockLists.domains}`);
 });
 
-chrome.storage.local.get(['key'], function(result) {
-  console.log('Value currently is ' + result.key);
-});
+setTimeout(run, 500);
