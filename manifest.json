@@ -12,6 +12,9 @@
       ],
       "js": [
         "./inject.js"
+      ],
+      "permissions": [
+        "storage"
       ]
     }
   ]
