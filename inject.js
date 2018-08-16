@@ -58,8 +58,8 @@ var block = function(domain) {
   storage.get(blockList, function(blockList){
     blockList.domains.push(domain);
     storage.set(blockList, function(){});
-    console.log(`block: ${domain}`)
-    console.log(`BlockList: ${blockList.domains}`);
+    // console.log(`block: ${domain}`)
+    // console.log(`BlockList: ${blockList.domains}`);
   });
 };
 
@@ -68,8 +68,8 @@ var unblock = function(domain) {
     var deletedBlockLists = blockList.domains.filter(blockedDomain => blockedDomain !== domain);
     blockList.domains = deletedBlockLists;
     storage.set(blockList, function(){});
-    console.log(`unblock: ${domain}`)
-    console.log(`BlockList: ${blockList.domains}`);
+    // console.log(`unblock: ${domain}`)
+    // console.log(`BlockList: ${blockList.domains}`);
   });
 };
 
@@ -117,6 +117,19 @@ var blockEvent = function(event) {
   var res = this.results;
   var blockDomain = getDomain(res[this.id]);
   block(blockDomain);
+  var blockedResults = [];
+  for (var i = 0; i < res.length; i++) {
+    if (res[i].style.display === "none" || res[i].style.backgroundColor !== "rgb(189, 189, 189)") {
+      blockedResults.push(res[i]);
+    }
+  }
+  if (blockedResults.length === 1) {
+    var btn = createShowButton();
+    btn.addEventListener("click", {results: res, handleEvent: showAllEvent}, false);
+    var lastResult = res[res.length - 1];
+    lastResult.parentNode.insertBefore(btn, lastResult.nextSibling);
+  }
+
 };
 
 var unblockEvent = function(event) {
@@ -128,7 +141,7 @@ var unblockEvent = function(event) {
 var hideEvent = function(event) {
   var res = this.results;
   var blockDomain = getDomain(res[this.id]);
-  console.log(`hide: ${blockDomain}`);
+  // console.log(`hide: ${blockDomain}`);
   for (var i = 0; i < res.length; i++) {
     if (getDomain(res[i]) == blockDomain) {
       hide(res[i]);
@@ -141,7 +154,7 @@ var showAllEvent = function(event) {
   storage.get(blockList, (blockList) => {
     for (var i = 0; i < results.length; i++) {
       var domain = getDomain(results[i]);
-      if (blockList.domains.includes(domain)) {
+      if (blockList.domains.indexOf(domain) !== -1) {
         show(results[i]);
         setStyleBlocked(results, i);
       }
@@ -152,7 +165,7 @@ var showAllEvent = function(event) {
 var setStyleUnblockedEvent = function(event) {
   var res = this.results;
   var unblockDomain = getDomain(res[this.id]);
-  console.log(`setUnblockedStyle: ${unblockDomain}`);
+  // console.log(`setUnblockedStyle: ${unblockDomain}`);
   for (var i = 0; i < res.length; i++) {
     if (getDomain(res[i]) == unblockDomain) {
       setStyleUnblocked(res, i);
@@ -164,38 +177,32 @@ var setStyleUnblockedEvent = function(event) {
 // Runner
 // --------------------------------------------
 var run = function() {
-  var results = document.getElementsByClassName("g pb");
+  var results = document.getElementsByClassName("rc");
   var showAllBtnFlg = false;
 
-  // First, hide blocked domains
   storage.get(blockList, (blockList) => {
     for (var i = 0; i < results.length; i++) {
-      console.log(i)
       var domain = getDomain(results[i]);
-      if (blockList.domains.includes(domain)) {
+      // First, hide blocked domains
+      if (blockList.domains.indexOf(domain) !== -1) {
         hide(results[i]);
         showAllBtnFlg = true;
+
+      // Next, append `block this domain` label
+      } else {
+        var aTag = createBlockATag();
+        aTag.addEventListener("click", {id: i, results: results, handleEvent: hideEvent}, false);
+        aTag.addEventListener("click", {id: i, results: results, handleEvent: blockEvent}, false);
+        results[i].appendChild(aTag);
       }
     }
-  });
-
-  // Next, append `block this domain` label
-  for (var i = 0; i < results.length; i++) {
-    var aTag = createBlockATag();
-    aTag.addEventListener("click", {id: i, results: results, handleEvent: hideEvent}, false);
-    aTag.addEventListener("click", {id: i, results: results, handleEvent: blockEvent}, false);
-    results[i].appendChild(aTag);
-  }
-
-  // Last, add `Show all` button
-  setTimeout(() => {
     if (showAllBtnFlg) {
       var btn = createShowButton();
       btn.addEventListener("click", {results: results, handleEvent: showAllEvent}, false);
       var lastResult = results[results.length - 1];
       lastResult.parentNode.insertBefore(btn, lastResult.nextSibling);
     }
-  }, 500);
+  });
 }
 
 // Initialize blockList if empty
@@ -203,10 +210,10 @@ storage.get(blockList, (blockList) => {
   if (blockList.domains.length == 0) {
     blockList.domains = [];
     storage.set(blockList, function() {
-      console.log('storage is empty');
+      // console.log('storage is empty');
     });
   }
-  console.log(`BlockList: ${blockList.domains}`);
+  // console.log(`BlockList: ${blockList.domains}`);
 });
 
 setTimeout(run, 500);
