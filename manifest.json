@@ -1,0 +1,18 @@
+{
+  "name": "g-block-list ",
+  "version": "0.0.1",
+  "manifest_version": 2,
+  "description": "",
+  "homepage_url": "https://gist.github.com/ygnmhdtt",
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.google.com/*",
+        "https://www.google.co.jp/*"
+      ],
+      "js": [
+        "./inject.js"
+      ]
+    }
+  ]
+}
