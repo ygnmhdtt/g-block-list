@@ -1,16 +1,16 @@
 var displayBlockList = function() {
-  storage.get(blockLists, function(blockLists){
-    document.getElementById("blockList").innerText = blockLists.domains.join("\n");
+  storage.get(blockList, function(blockList){
+    document.getElementById("blockList").innerText = blockList.domains.join("\n");
   });
 };
 
 var save = function() {
-  storage.get(blockLists, function(blockLists){
+  storage.get(blockList, function(blockList){
     var text = document.getElementById("blockList").value;
     var domains = text.split('\n').filter(domain => domain !== "");
-    blockLists.domains = domains;
-    storage.set(blockLists, function(){});
-    console.log(`BlockList: ${blockLists.domains}`);
+    blockList.domains = domains;
+    storage.set(blockList, function(){});
+    console.log(`BlockList: ${blockList.domains}`);
   });
 };
 
